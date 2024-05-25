@@ -1,1 +1,1 @@
-# HCP_2024
+This repository contains code to reproduce the figures from "*Estimating *cis* and *trans* contributions to differences in gene regulation*" by Ingileif Hallgrímsdóttir, Maria Carilli, and Lior Pachter.
