@@ -7,7 +7,7 @@ temp <- "cold"
 
 x_path <- "../data/ballinger/male_"
 design_path <- "../data/ballinger/male_design_oneCond"
-results_path <- glue("../results/ballinger/DESeq2/{tissue}_{temp}/male_")
+results_path <- glue("../results/ballinger/male_")
 
 
 # full model with intercepts and interaction terms
@@ -30,8 +30,6 @@ for (i in 1:3) {
     dds <- DESeqDataSetFromMatrix(countData = x, colData = colData, design = design)
     dds = DESeq(dds,full=design,betaPrior=FALSE)
 
-    # save the fitted R object
-    saveRDS(dds,glue("{results_path}{tissue}_{temp}_deseq2{null}_DDS.rds"))
 
     coefs_to_save <- coef(dds)
     mu <- assays(dds)[["mu"]]

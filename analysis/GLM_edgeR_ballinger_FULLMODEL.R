@@ -1,9 +1,9 @@
 library(edgeR)
 library(glue)
 
-x_path <- "../../data/ballinger/male_"
-design_path <- ".../../data/ballinger/male_design_model"
-results_path <- "../../results/ballinger/male_"
+x_path <- "../data/ballinger/male_"
+design_path <- "../data/ballinger/male_design_model"
+results_path <- "../results/ballinger/male_"
 
 
 # full model with intercepts and interaction terms
