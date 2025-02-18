@@ -5,9 +5,9 @@ library(glue)
 tissue <- "BAT"
 temp <- "cold"
 
-x_path <- "../../data/ballinger/male_"
-design_path <- "../../data/ballinger/male_design_model_C"
-results_path <- glue("../../results/ballinger/DESeq2/{tissue}_{temp}/male_")
+x_path <- "../data/ballinger/male_"
+design_path <- "../data/ballinger/male_design_oneCond"
+results_path <- glue("../results/ballinger/DESeq2/{tissue}_{temp}/male_")
 
 
 # full model with intercepts and interaction terms
