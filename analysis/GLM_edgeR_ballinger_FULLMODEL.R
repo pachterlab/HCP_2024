@@ -1,51 +1,36 @@
+library(devtools)
 library(edgeR)
-library(glue)
-
-x_path <- "../data/ballinger/male_"
-design_path <- "../data/ballinger/male_design_model"
-results_path <- "../results/ballinger/male_"
+devtools::load_all()
 
 
-# full model with intercepts and interaction terms
-tissue <- "LiverBAT"
-temp <- "warmcold"
-x <- t(read.delim(glue("{x_path}{tissue}_{temp}_X.txt"), header = FALSE))
-y <- DGEList(counts=x)  # or the quasi-fitlikelihood F-test with glmQLFit 
-y <- normLibSizes(y)
-y <- estimateDisp(y)
-int <- "int"
-
-null_hypothesis_vector <- c("","_no_cis","_no_trans", 
-                            "_no_organ", "_no_temp",
-                            "_no_organ-cis","_no_organ-trans",
-                            "_no_temp-cis","_no_temp-trans",
-                            "_no_organ-temp",
-                            "_no_organ-temp-cis","_no_organ-temp-trans")
+count_path <- system.file("extdata", "ballinger_counts.csv", package = "XgeneR")
+metadata_path <- system.file("extdata", "ballinger_metadata.csv", package = "XgeneR")
 
 
-for (i in 1:12) {
-    null <- null_hypothesis_vector[i]
-    print(null)
-    design <- read.delim( glue("{design_path}_tANDt_{int}_FULL{null}.txt"), header=FALSE ) 
-    fit <- glmFit(y,design) # or and glmQLFtest
-
-    coefs_to_save <- coef(fit)
-    fitted_vals <- fit$fitted.values
-    dev <- fit$deviance
-    logLik_dev <- -fit$deviance / 2 
-    dispersions <- y$tagwise.dispersion
-    logLik <- rowSums(dnbinom(
-        x = x,
-        mu = fitted_vals,
-        size = 1/ dispersions,
-        log = TRUE 
-    ))
+counts <- read.csv(count_path, row.names = 1)
+counts <- as.matrix(counts)
+metadata <- read.csv(metadata_path, row.names = 1) 
+rownames(metadata) <- metadata$Sample
 
 
-    write.csv(coefs_to_save, glue("{results_path}{tissue}_{temp}_edgeR_{int}_FULL{null}_coefficients.csv"), row.names = FALSE)
-    write.csv(fitted_vals, glue("{results_path}{tissue}_{temp}_edgeR_{int}_FULL{null}_fitted_vals.csv"), row.names = FALSE)
-    write.csv(logLik, glue("{results_path}{tissue}_{temp}_edgeR_{int}_FULL{null}_logLik.csv"), row.names = FALSE)
-    write.csv(logLik_dev, glue("{results_path}{tissue}_{temp}_edgeR_{int}_FULL{null}_logLikdev.csv"), row.names = FALSE)
-    write.csv(logLik_dev, glue("{results_path}{tissue}_{temp}_edgeR_{int}_FULL{null}_dev.csv"), row.names = FALSE)
-    write.csv(dispersions, glue("{results_path}{tissue}_{temp}_edgeR_{int}_FULL{null}_dispersions.csv"), row.names = FALSE)
-}
+fit_obj <- new("fitObject",counts = counts, metadata = metadata, fields_to_test = c("Tissue","Temperature"), higher_order_interactions = list("Reg*BAT*Cold","BAT*Cold"))
+fit_obj <- fit_edgeR(fit_obj)
+
+weight_names <- setdiff(colnames(fit_obj@raw_pvals), "Genes")
+
+out_df <- data.frame(
+  setNames(
+    fit_obj@raw_pvals[, weight_names, drop = FALSE],
+    paste0("raw_pval_", weight_names)
+  ),
+  setNames(
+    fit_obj@BH_FDRs[, weight_names, drop = FALSE],
+    paste0("BH_FDR_", weight_names)
+  ),
+  row.names = rownames(fit_obj@raw_pvals)
+)
+
+# write results
+write.csv(fit_obj@weights, file = "../results/weights_log_additive.csv",row.names = TRUE)
+write.csv(out_df,file = "../results/sig_log_additive.csv",row.names = TRUE)
+write.csv(fit_obj@design_matrix_full, file = "../results/design_matrix_log_additive.csv",row.names = TRUE)
